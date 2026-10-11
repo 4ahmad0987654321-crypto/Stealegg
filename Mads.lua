@@ -276,7 +276,7 @@ task.spawn(function()
 end)
 
 -- ============================================
--- LOOP: INSTANT STEAL
+-- LOOP: INSTANT STEAL (VERSI FIX)
 -- ============================================
 task.spawn(function()
     while task.wait(0.3) do
@@ -284,6 +284,8 @@ task.spawn(function()
             local egg, dist = findEgg()
             if egg and dist <= CONFIG.stealRange then
                 local basePos = CONFIG.basePosition
+                
+                -- STEP 1: Ambil telur
                 pcall(function()
                     char.HumanoidRootPart.CFrame = egg.CFrame
                     task.wait(0.05)
@@ -291,8 +293,60 @@ task.spawn(function()
                         firetouchinterest(char.HumanoidRootPart, egg, 0)
                         firetouchinterest(char.HumanoidRootPart, egg, 1)
                     end
-                    task.wait(0.05)
+                end)
+                
+                task.wait(0.1)
+                
+                -- STEP 2: Balik ke base + JIGGLE biar trigger deposit
+                pcall(function()
                     char.HumanoidRootPart.CFrame = CFrame.new(basePos)
+                    task.wait(0.05)
+                    
+                    -- Jiggle 1: geser dikit ke atas
+                    char.HumanoidRootPart.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
+                    task.wait(0.05)
+                    
+                    -- Jiggle 2: balik ke base
+                    char.HumanoidRootPart.CFrame = CFrame.new(basePos)
+                    task.wait(0.05)
+                    
+                    -- Jiggle 3: geser dikit ke samping
+                    char.HumanoidRootPart.CFrame = CFrame.new(basePos + Vector3.new(3, 0, 0))
+                    task.wait(0.05)
+                    
+                    -- Jiggle 4: balik lagi
+                    char.HumanoidRootPart.CFrame = CFrame.new(basePos)
+                    task.wait(0.1)
+                    
+                    -- Trigger ProximityPrompt di base
+                    for _, obj in pairs(game.Workspace:GetDescendants()) do
+                        if obj:IsA("ProximityPrompt") then
+                            local parent = obj.Parent
+                            if parent and parent:IsA("BasePart") then
+                                local baseDist = (parent.Position - char.HumanoidRootPart.Position).Magnitude
+                                if baseDist <= 30 then
+                                    if fireproximityprompt then
+                                        fireproximityprompt(obj)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    
+                    -- Trigger ClickDetector di base
+                    for _, obj in pairs(game.Workspace:GetDescendants()) do
+                        if obj:IsA("ClickDetector") then
+                            local parent = obj.Parent
+                            if parent and parent:IsA("BasePart") then
+                                local baseDist = (parent.Position - char.HumanoidRootPart.Position).Magnitude
+                                if baseDist <= 30 then
+                                    if fireclickdetector then
+                                        fireclickdetector(obj)
+                                    end
+                                end
+                            end
+                        end
+                    end
                 end)
             end
         end
