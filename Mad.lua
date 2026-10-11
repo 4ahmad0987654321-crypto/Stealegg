@@ -1,6 +1,6 @@
 -- ============================================
--- MAD FULL - INSTANT GRAB + INSTANT STEAL
--- Semua OFF default, aktifin manual
+-- MAD STEAL PRO
+-- Pilih Rarity + Area + Auto Steal
 -- ============================================
 
 local Players = game:GetService("Players")
@@ -12,38 +12,48 @@ local char = P.Character or P.CharacterAdded:Wait()
 -- CONFIG
 -- ============================================
 local CONFIG = {
-    instantGrab = false,
-    instantSteal = false,
-    antiRagdoll = false,
-    speedBoost = false,
-    grabRange = 20,
-    stealRange = 50,
-    speedValue = 100,
     basePosition = Vector3.new(0, 10, 0),
+    autoSteal = false,
+    loopDelay = 0.6,
+    selectedRarity = "All",
+    selectedArea = "All",
+}
+
+-- Daftar Rarity
+local RARITIES = {
+    "All", "Common", "Uncommon", "Rare", "Epic",
+    "Legendary", "Mythical", "Divine"
+}
+
+-- Daftar Area
+local AREAS = {
+    "All", "Forest", "Desert", "Snow", "Volcano",
+    "Enchanted Jungle", "Crystal Cave", "Sky Island"
 }
 
 -- ============================================
--- GUI
+-- HAPUS GUI LAMA
 -- ============================================
-local old = PG:FindFirstChild("MadFull")
+local old = PG:FindFirstChild("MadStealPro")
 if old then old:Destroy() end
 
+-- ============================================
+-- GUI UTAMA
+-- ============================================
 local GUI = Instance.new("ScreenGui")
-GUI.Name = "MadFull"
+GUI.Name = "MadStealPro"
 GUI.ResetOnSpawn = false
 GUI.Parent = PG
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.fromOffset(300, 380)
+Main.Size = UDim2.fromOffset(320, 480)
 Main.Position = UDim2.fromScale(0.5, 0.5)
 Main.AnchorPoint = Vector2.new(0.5, 0.5)
 Main.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
-Main.Visible = true
 Main.Parent = GUI
-
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
 local stroke = Instance.new("UIStroke", Main)
@@ -54,7 +64,7 @@ stroke.Thickness = 2
 local Header = Instance.new("TextLabel", Main)
 Header.Size = UDim2.new(1, 0, 0, 45)
 Header.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-Header.Text = "⚡ MAD FULL"
+Header.Text = "⚡ MAD STEAL PRO"
 Header.TextColor3 = Color3.fromRGB(255, 255, 255)
 Header.Font = Enum.Font.GothamBlack
 Header.TextSize = 16
@@ -75,63 +85,12 @@ MinBtn.TextSize = 14
 MinBtn.AutoButtonColor = false
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- Container
-local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -20, 1, -130)
-Container.Position = UDim2.fromOffset(10, 55)
-Container.BackgroundTransparency = 1
-Container.Parent = Main
-
-local Layout = Instance.new("UIListLayout", Container)
-Layout.Padding = UDim.new(0, 6)
-Layout.SortOrder = Enum.SortOrder.LayoutOrder
-
 -- ============================================
--- FUNGSI TOGGLE
+-- SET BASE
 -- ============================================
-local function createToggle(name, callback)
-    local btn = Instance.new("TextButton", Container)
-    btn.Size = UDim2.new(1, 0, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-    btn.BorderSizePixel = 0
-    btn.Text = name .. " : OFF"
-    btn.TextColor3 = Color3.fromRGB(220, 220, 225)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 12
-    btn.AutoButtonColor = false
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-    
-    local state = false
-    btn.MouseButton1Click:Connect(function()
-        state = not state
-        if state then
-            btn.BackgroundColor3 = Color3.fromRGB(25, 145, 105)
-            btn.Text = name .. " : ON"
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-            btn.Text = name .. " : OFF"
-        end
-        callback(state)
-    end)
-end
-
--- ============================================
--- TOMBOL FITUR
--- ============================================
-createToggle("⚡ Instant Grab", function(s) CONFIG.instantGrab = s end)
-createToggle("🎯 Instant Steal", function(s) CONFIG.instantSteal = s end)
-createToggle("🛡️ Anti Ragdoll", function(s) CONFIG.antiRagdoll = s end)
-createToggle("💨 Speed Boost", function(s)
-    CONFIG.speedBoost = s
-    if char and char:FindFirstChild("Humanoid") then
-        char.Humanoid.WalkSpeed = s and CONFIG.speedValue or 16
-    end
-end)
-
--- Set Base
 local SetBase = Instance.new("TextButton", Main)
 SetBase.Size = UDim2.new(1, -20, 0, 32)
-SetBase.Position = UDim2.new(0, 10, 1, -80)
+SetBase.Position = UDim2.fromOffset(10, 55)
 SetBase.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
 SetBase.BorderSizePixel = 0
 SetBase.Text = "📍 Set Base Position"
@@ -150,55 +109,167 @@ SetBase.MouseButton1Click:Connect(function()
     end
 end)
 
--- Close
-local CloseBtn = Instance.new("TextButton", Main)
-CloseBtn.Size = UDim2.new(1, -20, 0, 30)
-CloseBtn.Position = UDim2.new(0, 10, 1, -42)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Text = "❌ Close Menu"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 11
-CloseBtn.AutoButtonColor = false
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+-- ============================================
+-- LABEL RARITY
+-- ============================================
+local RarityLabel = Instance.new("TextLabel", Main)
+RarityLabel.Size = UDim2.new(1, -20, 0, 18)
+RarityLabel.Position = UDim2.fromOffset(10, 92)
+RarityLabel.BackgroundTransparency = 1
+RarityLabel.Text = "🎯 Rarity: All"
+RarityLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+RarityLabel.Font = Enum.Font.GothamBold
+RarityLabel.TextSize = 11
+RarityLabel.TextXAlignment = Enum.TextXAlignment.Left
+RarityLabel.Parent = Main
 
--- Open Button
-local OpenBtn = Instance.new("TextButton")
-OpenBtn.Size = UDim2.fromOffset(50, 50)
-OpenBtn.Position = UDim2.new(0, 20, 0.5, -25)
-OpenBtn.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-OpenBtn.BorderSizePixel = 0
-OpenBtn.Text = "⚡"
-OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenBtn.Font = Enum.Font.GothamBlack
-OpenBtn.TextSize = 22
-OpenBtn.AutoButtonColor = false
-OpenBtn.Visible = false
-OpenBtn.Parent = GUI
-Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0)
+-- Scroll Rarity
+local RarityScroll = Instance.new("ScrollingFrame", Main)
+RarityScroll.Size = UDim2.new(1, -20, 0, 40)
+RarityScroll.Position = UDim2.fromOffset(10, 112)
+RarityScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+RarityScroll.BorderSizePixel = 0
+RarityScroll.ScrollBarThickness = 3
+RarityScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+RarityScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+RarityScroll.ScrollingDirection = Enum.ScrollingDirection.X
+Instance.new("UICorner", RarityScroll).CornerRadius = UDim.new(0, 6)
 
-local OpenStroke = Instance.new("UIStroke", OpenBtn)
-OpenStroke.Color = Color3.fromRGB(220, 38, 44)
-OpenStroke.Thickness = 2
+local RarityLayout = Instance.new("UIListLayout", RarityScroll)
+RarityLayout.FillDirection = Enum.FillDirection.Horizontal
+RarityLayout.Padding = UDim.new(0, 5)
+RarityLayout.SortOrder = Enum.SortOrder.LayoutOrder
+RarityLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
-CloseBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false
-    OpenBtn.Visible = true
-end)
+local RarityPadding = Instance.new("UIPadding", RarityScroll)
+RarityPadding.PaddingLeft = UDim.new(0, 5)
+RarityPadding.PaddingTop = UDim.new(0, 5)
 
-MinBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false
-    OpenBtn.Visible = true
-end)
+-- ============================================
+-- LABEL AREA
+-- ============================================
+local AreaLabel = Instance.new("TextLabel", Main)
+AreaLabel.Size = UDim2.new(1, -20, 0, 18)
+AreaLabel.Position = UDim2.fromOffset(10, 157)
+AreaLabel.BackgroundTransparency = 1
+AreaLabel.Text = "🗺️ Area: All"
+AreaLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+AreaLabel.Font = Enum.Font.GothamBold
+AreaLabel.TextSize = 11
+AreaLabel.TextXAlignment = Enum.TextXAlignment.Left
+AreaLabel.Parent = Main
 
-OpenBtn.MouseButton1Click:Connect(function()
-    Main.Visible = true
-    OpenBtn.Visible = false
+-- Scroll Area
+local AreaScroll = Instance.new("ScrollingFrame", Main)
+AreaScroll.Size = UDim2.new(1, -20, 0, 40)
+AreaScroll.Position = UDim2.fromOffset(10, 177)
+AreaScroll.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+AreaScroll.BorderSizePixel = 0
+AreaScroll.ScrollBarThickness = 3
+AreaScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+AreaScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+AreaScroll.ScrollingDirection = Enum.ScrollingDirection.X
+Instance.new("UICorner", AreaScroll).CornerRadius = UDim.new(0, 6)
+
+local AreaLayout = Instance.new("UIListLayout", AreaScroll)
+AreaLayout.FillDirection = Enum.FillDirection.Horizontal
+AreaLayout.Padding = UDim.new(0, 5)
+AreaLayout.SortOrder = Enum.SortOrder.LayoutOrder
+AreaLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+
+local AreaPadding = Instance.new("UIPadding", AreaScroll)
+AreaPadding.PaddingLeft = UDim.new(0, 5)
+AreaPadding.PaddingTop = UDim.new(0, 5)
+
+-- ============================================
+-- FUNGSI BIKIN TOMBOL PILIHAN
+-- ============================================
+local function createOption(parent, name, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.fromOffset(80, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    btn.BorderSizePixel = 0
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(220, 220, 225)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 10
+    btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    btn.MouseButton1Click:Connect(function()
+        -- Reset semua tombol
+        for _, child in pairs(parent:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+            end
+        end
+        -- Highlight yang dipilih
+        btn.BackgroundColor3 = Color3.fromRGB(220, 38, 44)
+        callback(name)
+    end)
+    
+    return btn
+end
+
+-- Bikin tombol Rarity
+for _, rarity in ipairs(RARITIES) do
+    createOption(RarityScroll, rarity, function(selected)
+        CONFIG.selectedRarity = selected
+        RarityLabel.Text = "🎯 Rarity: " .. selected
+    end)
+end
+
+-- Bikin tombol Area
+for _, area in ipairs(AREAS) do
+    createOption(AreaScroll, area, function(selected)
+        CONFIG.selectedArea = selected
+        AreaLabel.Text = "🗺️ Area: " .. selected
+    end)
+end
+
+-- ============================================
+-- AUTO STEAL BUTTON
+-- ============================================
+local AutoBtn = Instance.new("TextButton", Main)
+AutoBtn.Size = UDim2.new(1, -20, 0, 50)
+AutoBtn.Position = UDim2.fromOffset(10, 225)
+AutoBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+AutoBtn.BorderSizePixel = 0
+AutoBtn.Text = "🔄 AUTO STEAL : OFF"
+AutoBtn.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoBtn.Font = Enum.Font.GothamBlack
+AutoBtn.TextSize = 14
+AutoBtn.AutoButtonColor = false
+Instance.new("UICorner", AutoBtn).CornerRadius = UDim.new(0, 8)
+
+AutoBtn.MouseButton1Click:Connect(function()
+    CONFIG.autoSteal = not CONFIG.autoSteal
+    if CONFIG.autoSteal then
+        AutoBtn.BackgroundColor3 = Color3.fromRGB(25, 145, 105)
+        AutoBtn.Text = "🔄 AUTO STEAL : ON"
+    else
+        AutoBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+        AutoBtn.Text = "🔄 AUTO STEAL : OFF"
+    end
 end)
 
 -- ============================================
--- FUNGSI CARI TELUR
+-- MANUAL STEAL BUTTON
+-- ============================================
+local ManualBtn = Instance.new("TextButton", Main)
+ManualBtn.Size = UDim2.new(1, -20, 0, 38)
+ManualBtn.Position = UDim2.fromOffset(10, 285)
+ManualBtn.BackgroundColor3 = Color3.fromRGB(25, 145, 105)
+ManualBtn.BorderSizePixel = 0
+ManualBtn.Text = "🚀 STEAL (Manual)"
+ManualBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ManualBtn.Font = Enum.Font.GothamBold
+ManualBtn.TextSize = 12
+ManualBtn.AutoButtonColor = false
+Instance.new("UICorner", ManualBtn).CornerRadius = UDim.new(0, 8)
+
+-- ============================================
+-- FUNGSI CARI TELUR (FILTER RARITY + AREA)
 -- ============================================
 local function findEgg()
     if not char or not char:FindFirstChild("HumanoidRootPart") then return nil end
@@ -206,7 +277,50 @@ local function findEgg()
     local myPos = char.HumanoidRootPart.Position
     
     for _, obj in pairs(game.Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name:lower():find("egg") then
+        if obj:IsA("BasePart") then
+            local name = obj.Name:lower()
+            
+            -- Cek apakah ini telur
+            local isEgg = name:find("egg") or name:find("telur")
+            if not isEgg then continue end
+            
+            -- Filter Rarity
+            if CONFIG.selectedRarity ~= "All" then
+                if not name:find(CONFIG.selectedRarity:lower()) then
+                    -- Cek di parent atau attributes
+                    local found = false
+                    if obj.Parent then
+                        if obj.Parent.Name:lower():find(CONFIG.selectedRarity:lower()) then
+                            found = true
+                        end
+                    end
+                    if not found then continue end
+                end
+            end
+            
+            -- Filter Area
+            if CONFIG.selectedArea ~= "All" then
+                local areaName = CONFIG.selectedArea:lower():gsub(" ", "")
+                local inArea = false
+                
+                -- Cek di parent
+                if obj.Parent and obj.Parent.Name:lower():gsub(" ", ""):find(areaName) then
+                    inArea = true
+                end
+                
+                -- Cek di ancestor
+                local ancestor = obj.Parent
+                while ancestor and ancestor ~= game.Workspace do
+                    if ancestor.Name:lower():gsub(" ", ""):find(areaName) then
+                        inArea = true
+                        break
+                    end
+                    ancestor = ancestor.Parent
+                end
+                
+                if not inArea then continue end
+            end
+            
             local dist = (obj.Position - myPos).Magnitude
             if dist < nearestDist then
                 nearestDist = dist
@@ -218,103 +332,92 @@ local function findEgg()
 end
 
 -- ============================================
--- FUNGSI CARI PROMPT
+-- FUNGSI STEAL (1x)
 -- ============================================
-local function findPrompts()
-    local prompts = {}
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return prompts end
-    local myPos = char.HumanoidRootPart.Position
+local function doSteal()
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
     
-    for _, obj in pairs(game.Workspace:GetDescendants()) do
-        if obj:IsA("ProximityPrompt") then
-            local parent = obj.Parent
-            if parent and parent:IsA("BasePart") then
-                local dist = (parent.Position - myPos).Magnitude
-                if dist <= CONFIG.grabRange then
-                    table.insert(prompts, {type = "proximity", obj = obj, dist = dist})
-                end
-            end
-        end
-        if obj:IsA("ClickDetector") then
-            local parent = obj.Parent
-            if parent and parent:IsA("BasePart") then
-                local dist = (parent.Position - myPos).Magnitude
-                if dist <= CONFIG.grabRange then
-                    table.insert(prompts, {type = "click", obj = obj, dist = dist})
-                end
-            end
-        end
+    local hrp = char.HumanoidRootPart
+    local egg, dist = findEgg()
+    
+    if not egg then
+        print("[MAD STEAL] Gak ada telur sesuai filter!")
+        return
     end
-    return prompts
+    
+    local basePos = CONFIG.basePosition
+    
+    -- Teleport ke telur
+    hrp.CFrame = CFrame.new(egg.Position)
+    task.wait(0.08)
+    
+    -- Grab
+    pcall(function()
+        if firetouchinterest then
+            firetouchinterest(hrp, egg, 0)
+            task.wait(0.03)
+            firetouchinterest(hrp, egg, 1)
+        end
+    end)
+    
+    pcall(function()
+        for _, child in pairs(egg:GetChildren()) do
+            if child:IsA("ProximityPrompt") and fireproximityprompt then
+                fireproximityprompt(child)
+            end
+        end
+    end)
+    
+    task.wait(0.08)
+    
+    -- Balik ke base
+    hrp.CFrame = CFrame.new(basePos)
 end
 
-local function triggerPrompt(data)
-    if not data then return end
-    if data.type == "proximity" then
-        pcall(function()
-            if fireproximityprompt then fireproximityprompt(data.obj) end
-        end)
-    elseif data.type == "click" then
-        pcall(function()
-            if fireclickdetector then fireclickdetector(data.obj) end
-        end)
-    end
-end
+ManualBtn.MouseButton1Click:Connect(function()
+    task.spawn(doSteal)
+end)
 
 -- ============================================
--- LOOP: INSTANT GRAB
+-- AUTO LOOP
 -- ============================================
 task.spawn(function()
-    while task.wait(0.05) do
-        if CONFIG.instantGrab then
-            local prompts = findPrompts()
-            if #prompts > 0 then
-                table.sort(prompts, function(a, b) return a.dist < b.dist end)
-                triggerPrompt(prompts[1])
-            end
+    while task.wait(CONFIG.loopDelay) do
+        if CONFIG.autoSteal then
+            pcall(doSteal)
         end
     end
 end)
 
 -- ============================================
--- LOOP: INSTANT STEAL
+-- CLOSE
 -- ============================================
-task.spawn(function()
-    while task.wait(0.3) do
-        if CONFIG.instantSteal and char and char:FindFirstChild("HumanoidRootPart") then
-            local egg, dist = findEgg()
-            if egg and dist <= CONFIG.stealRange then
-                local basePos = CONFIG.basePosition
-                pcall(function()
-                    char.HumanoidRootPart.CFrame = egg.CFrame
-                    task.wait(0.05)
-                    if firetouchinterest then
-                        firetouchinterest(char.HumanoidRootPart, egg, 0)
-                        firetouchinterest(char.HumanoidRootPart, egg, 1)
-                    end
-                    task.wait(0.05)
-                    char.HumanoidRootPart.CFrame = CFrame.new(basePos)
-                end)
-            end
-        end
-    end
+local CloseBtn = Instance.new("TextButton", Main)
+CloseBtn.Size = UDim2.new(1, -20, 0, 30)
+CloseBtn.Position = UDim2.new(0, 10, 1, -42)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Text = "❌ Close"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 11
+CloseBtn.AutoButtonColor = false
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    GUI:Destroy()
+end)
+
+MinBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
 end)
 
 -- ============================================
--- LOOP: ANTI RAGDOLL
+-- UPDATE CHARACTER
 -- ============================================
-task.spawn(function()
-    while task.wait(0.1) do
-        if CONFIG.antiRagdoll and char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.PlatformStand = false
-            char.Humanoid.Sit = false
-        end
-    end
-end)
-
 P.CharacterAdded:Connect(function(newChar)
     task.wait(1)
     char = newChar
 end)
 
-print("[MAD FULL] Loaded! Aktifin fitur di menu.")
+print("[MAD STEAL PRO] Loaded! Pilih Rarity & Area, baru AUTO STEAL!")
