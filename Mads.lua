@@ -276,32 +276,46 @@ task.spawn(function()
 end)
 
 -- ============================================
--- LOOP: INSTANT STEAL (BERSIH - AMBIL + BALIK)
+-- LOOP: INSTANT STEAL (TELEPORT PAS UDAH PEGANG TELUR)
 -- ============================================
+local wasHoldingEgg = false
+
 task.spawn(function()
-    while task.wait(0.2) do
+    while task.wait(0.1) do
         if CONFIG.instantSteal and char and char:FindFirstChild("HumanoidRootPart") then
-            local egg, dist = findEgg()
-            if egg then
+            
+            -- Cek apakah lu lagi pegang telur
+            local isHolding = false
+            for _, obj in pairs(char:GetChildren()) do
+                if obj.Name:lower():find("egg") then
+                    isHolding = true
+                    break
+                end
+            end
+            
+            -- Cek juga di HumanoidRootPart
+            if not isHolding then
+                for _, obj in pairs(char.HumanoidRootPart:GetChildren()) do
+                    if obj.Name:lower():find("egg") then
+                        isHolding = true
+                        break
+                    end
+                end
+            end
+            
+            -- Kalau baru mulai pegang telur (dari sebelumnya gak pegang)
+            if isHolding and not wasHoldingEgg then
                 local basePos = CONFIG.basePosition
                 
-                -- Ambil telur
-                pcall(function()
-                    char.HumanoidRootPart.CFrame = egg.CFrame
-                    task.wait(0.03)
-                    if firetouchinterest then
-                        firetouchinterest(char.HumanoidRootPart, egg, 0)
-                        firetouchinterest(char.HumanoidRootPart, egg, 1)
-                    end
-                end)
-                
-                task.wait(0.03)
-                
-                -- Langsung balik ke base
+                -- Langsung teleport ke base
                 pcall(function()
                     char.HumanoidRootPart.CFrame = CFrame.new(basePos)
                 end)
+                
+                print("[STEAL] Telur kepegang, balik ke base!")
             end
+            
+            wasHoldingEgg = isHolding
         end
     end
 end)
