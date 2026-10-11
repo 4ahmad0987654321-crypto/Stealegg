@@ -276,77 +276,30 @@ task.spawn(function()
 end)
 
 -- ============================================
--- LOOP: INSTANT STEAL (VERSI FIX)
+-- LOOP: INSTANT STEAL (BERSIH - AMBIL + BALIK)
 -- ============================================
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.2) do
         if CONFIG.instantSteal and char and char:FindFirstChild("HumanoidRootPart") then
             local egg, dist = findEgg()
-            if egg and dist <= CONFIG.stealRange then
+            if egg then
                 local basePos = CONFIG.basePosition
                 
-                -- STEP 1: Ambil telur
+                -- Ambil telur
                 pcall(function()
                     char.HumanoidRootPart.CFrame = egg.CFrame
-                    task.wait(0.05)
+                    task.wait(0.03)
                     if firetouchinterest then
                         firetouchinterest(char.HumanoidRootPart, egg, 0)
                         firetouchinterest(char.HumanoidRootPart, egg, 1)
                     end
                 end)
                 
-                task.wait(0.1)
+                task.wait(0.03)
                 
-                -- STEP 2: Balik ke base + JIGGLE biar trigger deposit
+                -- Langsung balik ke base
                 pcall(function()
                     char.HumanoidRootPart.CFrame = CFrame.new(basePos)
-                    task.wait(0.05)
-                    
-                    -- Jiggle 1: geser dikit ke atas
-                    char.HumanoidRootPart.CFrame = CFrame.new(basePos + Vector3.new(0, 5, 0))
-                    task.wait(0.05)
-                    
-                    -- Jiggle 2: balik ke base
-                    char.HumanoidRootPart.CFrame = CFrame.new(basePos)
-                    task.wait(0.05)
-                    
-                    -- Jiggle 3: geser dikit ke samping
-                    char.HumanoidRootPart.CFrame = CFrame.new(basePos + Vector3.new(3, 0, 0))
-                    task.wait(0.05)
-                    
-                    -- Jiggle 4: balik lagi
-                    char.HumanoidRootPart.CFrame = CFrame.new(basePos)
-                    task.wait(0.1)
-                    
-                    -- Trigger ProximityPrompt di base
-                    for _, obj in pairs(game.Workspace:GetDescendants()) do
-                        if obj:IsA("ProximityPrompt") then
-                            local parent = obj.Parent
-                            if parent and parent:IsA("BasePart") then
-                                local baseDist = (parent.Position - char.HumanoidRootPart.Position).Magnitude
-                                if baseDist <= 30 then
-                                    if fireproximityprompt then
-                                        fireproximityprompt(obj)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    
-                    -- Trigger ClickDetector di base
-                    for _, obj in pairs(game.Workspace:GetDescendants()) do
-                        if obj:IsA("ClickDetector") then
-                            local parent = obj.Parent
-                            if parent and parent:IsA("BasePart") then
-                                local baseDist = (parent.Position - char.HumanoidRootPart.Position).Magnitude
-                                if baseDist <= 30 then
-                                    if fireclickdetector then
-                                        fireclickdetector(obj)
-                                    end
-                                end
-                            end
-                        end
-                    end
                 end)
             end
         end
